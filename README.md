@@ -1,4 +1,4 @@
-# Software for FLight Simulator
+# Software for Flight Simulator
 
 In this git I will put all the source code of my projects related to flight simulator
 and the building of a flight simulator cockpits.
