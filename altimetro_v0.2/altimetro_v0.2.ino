@@ -26,7 +26,7 @@ int enc_b=5;
 int enc_last_b=0;
 long enc_value=INIT_ENC_VALUE;
 
-// If I know how to programing OO, next will be a object.
+// If will I know how to programing OO, next will be a object.
 
 #define MDELAY 2
 
@@ -80,7 +80,7 @@ for (c=0;c<2000;c++) {
     mpap1_pos =mpap_paso(mpap1_pins,mpap1_pos,1);
 }
 
-// only for check, if sensor is active, increase other 500feet.
+// only for check, if sensor is active, increase other 250feet.
 if (digitalRead(12)==0) {
 for (c=0;c<1000;c++) {  
    mpap1_pos =mpap_paso(mpap1_pins,mpap1_pos,1);
@@ -109,10 +109,11 @@ pinMode(enc_p1, INPUT_PULLUP);
 pinMode(enc_p2, INPUT_PULLUP);
 pinMode(enc_b, INPUT_PULLUP);
 enc_last_s=digitalRead(enc_p1);
-//   el optoacoplador del paso por cero
+//   el opto switch for zero position
 pinMode(12, INPUT_PULLUP);
 pinMode(13, OUTPUT);
-Serial.println("Hola");
+
+// NOTE: BYPASS NEXT LINE UNTIL YOU GET INSTALLED zero position sensor.
 init_gauges();
 }
 
@@ -180,7 +181,7 @@ int s2=0;
 
 
 void loop(){
-// test para el optoacoplador
+// test for optoacoplador not needed but help during instalation. 
 digitalWrite(13,digitalRead(12));
 
 // check if need to move the needle
