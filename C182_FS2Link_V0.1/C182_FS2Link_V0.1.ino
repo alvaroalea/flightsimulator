@@ -25,24 +25,28 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define FSX_ZERO 2
 #define FSX_SPAN 3
 #define SRV_INIT 4
-long servodata [16][5] = // SERVO MIN, SEVO SPAM, FS MIN, FS SPAM, center or init position
+#define SRV_INV  5
+long servodata [16][6] = 
 {
-  {150, 600 - 150, 0, 1000 - 0, 375}, // mini gauge 1 needle 1 - Fuel Left
-  {150, 600 - 150, 0, 1000 - 0, 375}, // mini gauge 1 needle 2 - Fuel Right
-  {150, 600 - 150, 0, 1000 - 0, 375}, // mini gauge 2 needle 1 - EGT Exausted Gas Temp
-  {150, 600 - 150, 0, 1000 - 0, 375}, // mini gauge 2 needle 2 - CHT Cylinder Temp
-  {150, 600 - 150, 0, 1000 - 0, 375}, // mini gauge 3 needle 1 - Oil Temperature
-  {150, 600 - 150, 0, 1000 - 0, 375}, // mini gauge 3 needle 2 - Oil Pressure
-  {150, 600 - 150, 0, 1000 - 0, 375}, // mini gauge 4 needle 1 - Volts
-  {150, 600 - 150, 0, 1000 - 0, 375}, // mini gauge 4 needle 2 - Amps
-  {150, 600 - 150, 0, 1000 - 0, 375}, // Airspeed
-  {150, 600 - 150, 0, 1000 - 0, 375}, // Turn Coordinator, plane
-  {150, 600 - 150, 0, 1000 - 0, 375}, // Turn Coordinator, ball
-  {150, 600 - 150, 0, 1000 - 0, 375}, // Attitude, Pitch
-  {150, 600 - 150, 0, 1000 - 0, 375}, // Attitude, Bank
-  {150, 600 - 150, 0, 1000 - 0, 375}, // Vertical Speed
-  {150, 600 - 150, 0, 1000 - 0, 375}, // RPM
-  {150, 600 - 150, 0, 1000 - 0, 375} // Reserve
+//SRV MIN,SRV SPAM,   FS MIN,FS SPAM,         center or init position, inverted servo
+  {200,   600 - 200,  0,     100 - 0,         375,  0}, // s0 mini gauge 1 needle 1 - Fuel Left
+  {200,   600 - 200,  0,     100 - 0,         375,  1}, // s1 mini gauge 1 needle 2 - Fuel Right
+  {200,   600 - 200,  450,   850 - 450,       375,  0}, // s2 mini gauge 2 needle 1 - EGT Exausted Gas Temp
+  {200,   600 - 200,  0,     19 - 0,          375,  1}, // s3 mini gauge 2 needle 2 - Fuel Flow
+  {200,   600 - 200,  23,    119 - 23,        375,  0}, // s4 mini gauge 3 needle 1 - Oil Temperature, gauge is in F, FS2Link provide ºC.
+  {200,   600 - 200,  0,     115 - 0,         375,  1}, // s5 mini gauge 3 needle 2 - Oil Pressure
+  {200,   600 - 200,  3,     7 - 3,           375,  0}, // s6 mini gauge 4 needle 1 - VACum
+  {200,   600 - 200,  -60,   +60 - (-60),     375,  1}, // s7 mini gauge 4 needle 2 - Amps
+  
+  {222,   456 - 222,  40,    200 - 40,        375,  0}, // <P s8 Airspeed
+  {300,   300 - 300,  -1024, 1024 - (-1024),  351,  1}, // s9  #b Turn Coordinator, plane
+  {291,   411 - 291,  0,     255 - 0,         350,  0}, // s10 <N Turn Coordinator, ball
+  {305,   405 - 305,  -27,   27 - (-27),      355,  1}, // s11 <Q Attitude, Pitch
+  {300,   400 - 300,  -45,   45 - (-45),      350,  1}, // s12 <R Attitude, Bank
+  {220,   490 - 220,  -2000, 2000 - (-2000),  355,  0}, // s13 <L Vertical Speed
+  {255,   478 - 255,  0,     3500 - 0,        375,  0}, // s14 <T RPM
+  {200,   600 - 200,  0,     100 - 0,         375,  0} //  s15 Reserve
+
 };
 
 // Pinouts and other hardware definitions.
@@ -239,6 +243,28 @@ double serialget5 (void) {
   return (double)a;
 }// end of serialget5 function
 
+double serialget21 (void) {
+  double a;
+  int s1;
+  int s2 = 0;
+  s1 = getChar();
+  if (s1 == '-') {
+    s2 = 1;
+    s1 = getChar();
+  } else if (s1 == '+') {
+    s1 = getChar();
+  }
+  a =   (         s1 - '0') * 10;
+  a = a + (getChar() - '0');
+  s1 = getChar(); // the decimal dot
+  a = a + (getChar() - '0') * 0.1;
+  a = a + (getChar() - '0') * 0.01;
+  if (s2 == 1) {
+    a = -a;
+  }
+  return a;
+}// end of serialget21 function
+
 double serialget31 (void) {
   double a;
   int s1;
@@ -250,9 +276,10 @@ double serialget31 (void) {
   } else if (s1 == '+') {
     s1 = getChar();
   }
-  a =   (       s1 - '0') * 10000;
-  a = a + (getChar() - '0') * 1000;
+  a =   (         s1 - '0') * 100;
+  a = a + (getChar() - '0') * 10;
   a = a + (getChar() - '0');
+  s1 = getChar(); // the decimal dot
   a = a + (getChar() - '0') * 0.1;
   a = a + (getChar() - '0') * 0.01;
   if (s2 == 1) {
@@ -260,15 +287,19 @@ double serialget31 (void) {
   }
   return a;
 }// end of serialget31 function
+ 
 
-
-// This function get the info from FSX and translate to servo position.
+// This function get the data from FSX and translate to servo position.
 void setservopos (int servo, double value) {
   double y;
   long x;
   y = (value - servodata [servo][FSX_ZERO]) / servodata [servo][FSX_SPAN] ;
+  if (y<0) y=0;
+  if (y>1) y=1;
+  if (servodata[servo][SRV_INV]==1) y=1-y;
   x = servodata [servo][SRV_ZERO] + (y * servodata [servo][SRV_SPAN]) ;
   pwm.setPWM(servo, 0, x );
+  Serial.println(x);
 }// end of setservopos function
 
 
@@ -285,7 +316,7 @@ void doserial (void) {
         new_alt(serialget5());
       }
       if (CodeIn == 'b') {// #b = stick of turn coordinator we use custom FSUIPC offset 037C because fs2link don't export this (but ball yes, WTF?)
-        // lsetservopos(9,serialget3());
+         setservopos(9,serialget5());
       }
     }// end if #
     if (CodeIn == '<') {// The first identifier is "<"
@@ -319,11 +350,6 @@ void doserial (void) {
       }
       if (CodeIn == 'Z') {// <Z = Right Fuel %
         setservopos(1, serialget2());
-
-      }
-      if (CodeIn == 'v') {// <v = voltage
-        setservopos(6, serialget2());
-
       }
     }// end if <
     if (CodeIn == '?') {// The first identifier is "?"
@@ -331,11 +357,14 @@ void doserial (void) {
       if (CodeIn == 'M') {// ?M = EGT1
         setservopos(2, serialget3());
       }
-      if (CodeIn == 'S') {// ?S = CHT1
+      if (CodeIn == 'S') {// ?S = CHT1  //FIXME - ?S is CHT1 not FUELFLOW
         setservopos(3, serialget3());
       }
       if (CodeIn == 'O') {// ?O = Oil Temp 1
         setservopos(4, serialget3());
+      }
+      if (CodeIn == 'E') {// ?E = vacum
+        setservopos(6, serialget21());
       }
       if (CodeIn == 'J') {// ?J = Current in Amps
         setservopos(7, serialget2());
